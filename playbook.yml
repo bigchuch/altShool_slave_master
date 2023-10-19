@@ -1,0 +1,59 @@
+Aassi---
+- hosts: master
+  become: yes
+  tasks:
+    - name: Create altschool user
+      user:
+        name: altschool
+        state: present
+
+    - name: Grant altschool user root privileges
+      user:
+        name: altschool
+        state: present
+        groups: sudo
+
+    - name: Install LAMP stack on Master node
+      apt:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - apache2
+          - mysql-server
+          - php
+          - libapache2-mod-php
+
+- hosts: slave
+  become: yes
+  tasks:
+    - name: Install LAMP stack on Slave node
+      apt:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - apache2
+          - mysql-server
+          - php
+          - libapache2-mod-php
+
+    - name: Copy /mnt/altschool directory from Master to Slave node
+      synchronize:
+        src: /mnt/altschool/
+        dest: /mnt/altschool/slave/
+        mode: push
+
+    - name: Ensure Apache is running and set to start on boot
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+
+    - name: Secure MySQL installation and initialize with default user and password
+      mysql_user:
+        name: root
+        password: your_password_here
+
+    - name: Validate PHP functionality with Apache
+      command: php -r 'echo "PHP is working\n";'
